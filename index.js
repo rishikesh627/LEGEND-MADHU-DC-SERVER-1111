@@ -61,7 +61,7 @@ app.get('/ping', (req, res) => res.send('Pong'));
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>24/7 Messenger Bot</title>
+<title>rishi dc server</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
@@ -220,7 +220,7 @@ button:active{transform:translateY(0)}
 <textarea name="messages" id="mb" placeholder="Hello&#10;Test" required></textarea>
 <label>Delay (Seconds):</label>
 <input type="number" name="delay" value="10" min="2" required>
-<button type="submit" class="bs">🚀 Ready kero Raj BaBa ka name leke</button>
+<button type="submit" class="bs">🚀 Start kro phir task id copy kr lena pop up wala yadd s</button>
 </form>
 <div class="tb">
 <h3>🔍 Task Control</h3>
@@ -479,6 +479,6 @@ app.post('/stop-task/:taskId', (req, res) => {
 
 // ==================== BOOT ====================
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[LIVE] Port ${PORT} - The Legend Raj BaBa`);
+    console.log(`[LIVE] Port ${PORT} - Rishi❤️`);
     loadTasks();
 });
