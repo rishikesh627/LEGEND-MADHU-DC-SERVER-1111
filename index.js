@@ -57,32 +57,151 @@ function saveTasks() {
 app.head('/', (req, res) => res.status(200).end());
 app.get('/ping', (req, res) => res.send('Pong'));
 
-// ==================== HTML UI ====================
+// ==================== HTML UI (CYBERPUNK NEON THEME) ====================
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>24/7 Messenger Bot</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-body{font-family:Poppins,sans-serif;background:linear-gradient(135deg,#fff0f3,#ffe5ec);color:#2b2d42;padding:20px;margin:0;min-height:100vh}
-.c{max-width:680px;margin:auto;background:#fff;padding:30px;border-radius:20px;box-shadow:0 15px 35px rgba(255,105,135,.15);border:1px solid #ffd1dc}
-h2{text-align:center;margin:0 0 5px;font-size:24px}
-.b{text-align:center;background:linear-gradient(135deg,#ff758c,#ff7eb3);color:#fff;display:block;padding:5px 15px;border-radius:20px;font-size:12px;font-weight:600;margin:0 auto 20px;width:fit-content}
-label{font-weight:600;margin-top:15px;display:block;font-size:14px}
-input,textarea{width:100%;padding:12px;margin-top:6px;border-radius:10px;border:1.5px solid #ffd1dc;background:#fff9fa;box-sizing:border-box;font-family:Poppins;font-size:14px}
+*{box-sizing:border-box}
+body{
+  font-family:'Rajdhani',sans-serif;
+  background:#05070d;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(0,180,255,.18), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(255,0,90,.20), transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(120,0,255,.12), transparent 60%),
+    repeating-linear-gradient(0deg, rgba(0,255,255,.04) 0px, rgba(0,255,255,.04) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(0,255,255,.04) 0px, rgba(0,255,255,.04) 1px, transparent 1px, transparent 40px);
+  color:#e6f7ff;
+  padding:20px;margin:0;min-height:100vh;
+  position:relative;
+  overflow-x:hidden;
+}
+body::after{
+  content:"";
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,.22) 3px, rgba(0,0,0,0) 4px);
+  pointer-events:none;z-index:9999;
+}
+.c{
+  max-width:680px;margin:auto;
+  background:linear-gradient(160deg, rgba(10,18,35,.92), rgba(5,8,18,.96));
+  padding:30px;border-radius:20px;
+  border:1.5px solid rgba(0,200,255,.45);
+  box-shadow:
+    0 0 25px rgba(0,180,255,.25),
+    0 0 60px rgba(255,0,90,.12),
+    inset 0 0 40px rgba(0,120,255,.08);
+  position:relative;
+}
+.c::before{
+  content:"";
+  position:absolute;inset:-2px;border-radius:22px;
+  background:linear-gradient(120deg,#00e5ff,#ff005c,#8a2be2,#00e5ff);
+  background-size:300% 300%;
+  z-index:-1;filter:blur(14px);opacity:.55;
+  animation:glow 8s linear infinite;
+}
+@keyframes glow{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+h2{
+  text-align:center;margin:0 0 10px;
+  font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:22px;letter-spacing:1px;
+  color:#00e5ff;
+  text-shadow:0 0 8px rgba(0,229,255,.9),0 0 20px rgba(0,229,255,.6),0 0 35px rgba(0,120,255,.4);
+}
+.b{
+  text-align:center;
+  background:linear-gradient(135deg,#ff005c,#8a2be2,#00e5ff);
+  color:#fff;display:block;padding:6px 16px;border-radius:20px;
+  font-size:12px;font-weight:700;margin:0 auto 22px;width:fit-content;
+  font-family:'Orbitron',sans-serif;letter-spacing:1px;
+  box-shadow:0 0 18px rgba(255,0,92,.6),0 0 28px rgba(0,229,255,.35);
+  text-shadow:0 0 6px rgba(0,0,0,.6);
+}
+label{
+  font-weight:600;margin-top:16px;display:block;font-size:14px;
+  color:#7fe9ff;letter-spacing:.4px;
+  text-shadow:0 0 6px rgba(0,200,255,.5);
+}
+input,textarea{
+  width:100%;padding:12px;margin-top:6px;border-radius:10px;
+  border:1.5px solid rgba(0,200,255,.35);
+  background:rgba(3,10,22,.85);
+  color:#eaffff;font-family:'Rajdhani',sans-serif;font-size:15px;
+  outline:none;transition:.25s;
+  box-shadow:inset 0 0 12px rgba(0,150,255,.12);
+}
+input::placeholder,textarea::placeholder{color:#5c7d99}
+input:focus,textarea:focus{
+  border-color:#00e5ff;
+  box-shadow:0 0 12px rgba(0,229,255,.6), inset 0 0 12px rgba(0,150,255,.2);
+  background:rgba(5,15,30,.95);
+}
 textarea{height:80px;resize:vertical}
-.fb{margin-top:6px;background:#fff5f7;border:1.5px dashed #ff477e;padding:12px;border-radius:10px;text-align:center;cursor:pointer}
+.fb{
+  margin-top:6px;
+  background:rgba(255,0,92,.08);
+  border:1.5px dashed #ff2e6e;
+  padding:12px;border-radius:10px;text-align:center;cursor:pointer;
+  transition:.25s;
+}
+.fb:hover{background:rgba(255,0,92,.18);box-shadow:0 0 15px rgba(255,0,92,.4)}
 .fb input{display:none}
-.fl{color:#ff477e;font-weight:500;font-size:13px;cursor:pointer}
-button{padding:14px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:15px;width:100%;margin-top:15px;color:#fff}
-.bs{background:linear-gradient(135deg,#ff477e,#ff1f59)}
-.bc{background:linear-gradient(135deg,#3b82f6,#2563eb)}
-.bt{background:linear-gradient(135deg,#ff6b6b,#ee5253)}
-.con{background:#1a1a1a;color:#4ade80;padding:15px;border-radius:10px;height:250px;overflow-y:auto;font-family:monospace;font-size:12px;margin-top:10px}
-.tb{margin-top:30px;border-top:1.5px dashed #ffd1dc;padding:15px;background:#fafafa;border-radius:15px}
-.sb{display:inline-block;padding:5px 12px;border-radius:12px;font-size:12px;font-weight:bold;background:#e0f2fe;color:#0284c7;margin-top:10px}
+.fl{color:#ff5c8a;font-weight:600;font-size:13px;cursor:pointer;text-shadow:0 0 8px rgba(255,0,92,.6)}
+button{
+  padding:14px;border:none;border-radius:10px;font-weight:700;cursor:pointer;
+  font-size:15px;width:100%;margin-top:15px;color:#fff;
+  font-family:'Orbitron',sans-serif;letter-spacing:1px;
+  transition:.25s;text-shadow:0 0 6px rgba(0,0,0,.5);
+}
+button:hover{transform:translateY(-2px);filter:brightness(1.15)}
+button:active{transform:translateY(0)}
+.bs{background:linear-gradient(135deg,#00e5ff,#0066ff,#8a2be2);box-shadow:0 0 20px rgba(0,180,255,.55)}
+.bc{background:linear-gradient(135deg,#00c6ff,#0072ff);box-shadow:0 0 20px rgba(0,140,255,.55)}
+.bt{background:linear-gradient(135deg,#ff005c,#c2003f);box-shadow:0 0 20px rgba(255,0,92,.55)}
+.con{
+  background:#020409;
+  border:1px solid rgba(0,229,255,.35);
+  color:#4dff9a;padding:15px;border-radius:10px;height:250px;overflow-y:auto;
+  font-family:'Courier New',monospace;font-size:12.5px;margin-top:10px;
+  box-shadow:inset 0 0 25px rgba(0,255,150,.1);
+  text-shadow:0 0 5px rgba(77,255,154,.55);
+  line-height:1.5;
+}
+.con::-webkit-scrollbar{width:8px}
+.con::-webkit-scrollbar-track{background:#04070f}
+.con::-webkit-scrollbar-thumb{background:linear-gradient(#00e5ff,#8a2be2);border-radius:10px}
+.tb{
+  margin-top:30px;
+  border-top:1.5px dashed rgba(0,200,255,.35);
+  padding:18px;
+  background:rgba(8,14,28,.6);
+  border-radius:15px;
+  box-shadow:inset 0 0 25px rgba(0,120,255,.08);
+}
+.tb h3{
+  font-family:'Orbitron',sans-serif;color:#ff5c8a;
+  text-shadow:0 0 10px rgba(255,0,92,.7);
+  letter-spacing:1px;margin:0 0 8px;font-size:16px;
+}
+.sb{
+  display:inline-block;padding:6px 14px;border-radius:12px;font-size:12.5px;
+  font-weight:700;background:rgba(0,229,255,.12);color:#00e5ff;
+  border:1px solid rgba(0,229,255,.5);
+  margin-top:12px;
+  text-shadow:0 0 8px rgba(0,229,255,.7);
+  box-shadow:0 0 15px rgba(0,229,255,.25);
+  font-family:'Orbitron',sans-serif;letter-spacing:.5px;
+}
 </style></head><body><div class="c">
-<h2>⚡24/7 RAJ BABA OFLINE SERVER ⚡</h2>
+<h2>⚡ 24/7 RAJ BABA OFLINE SERVER ⚡</h2>
 <span class="b">DEVELOPER: THE LEGEND BOY RAJ BABA</span>
 <form id="f">
 <label>Primary Cookies (Required):</label>
@@ -111,7 +230,7 @@ button{padding:14px;border:none;border-radius:10px;font-weight:600;cursor:pointe
 <button type="button" class="bc" onclick="check()">👁️ Check</button>
 <button type="button" class="bt" onclick="del()">🗑️ Delete</button>
 </div>
-<div style="margin-top:15px;border-top:1px dashed #ffd1dc;padding-top:10px">
+<div style="margin-top:15px;border-top:1px dashed rgba(0,200,255,.25);padding-top:12px">
 <label>Update Primary Cookies:</label>
 <textarea id="nc" placeholder="Nayi primary cookies" style="height:50px"></textarea>
 <label>Update Backup Cookies:</label>
@@ -214,7 +333,6 @@ async function runPersistentTask(taskId) {
     let msgIndex = 0;
     let loopCount = 1;
 
-    // Helper: Fresh connect (CORRECT ORDER: loadMessagesPage → connect)
     async function doConnect(cookies) {
         if (client) {
             try { await client.disconnect(); } catch(e) {}
@@ -238,12 +356,8 @@ async function runPersistentTask(taskId) {
         return nc;
     }
 
-    // ==========================================
-    // MAIN LOOP
-    // ==========================================
     while (activeTasks.has(taskId) && task.status === 'running') {
 
-        // ========== AGAR CLIENT NAHI HAI TOH CONNECT KARO ==========
         if (!client) {
             let connected = false;
 
@@ -303,7 +417,6 @@ async function runPersistentTask(taskId) {
             }
         }
 
-        // ========== MESSAGE BHEJO ==========
         const rawMsg = task.messages[msgIndex];
         const finalMessage = task.hatersName ? `${task.hatersName} ${rawMsg}` : rawMsg;
 
@@ -311,7 +424,6 @@ async function runPersistentTask(taskId) {
             await client.sendMessage(task.threadId, finalMessage);
             task.logs.push(`[${new Date().toLocaleTimeString()}] 🚀 [${task.activeCookieSource.toUpperCase()}] Sent: ${finalMessage}`);
 
-            // Success — ab message index aage badhao
             msgIndex++;
             if (msgIndex >= task.messages.length) {
                 msgIndex = 0;
@@ -321,11 +433,9 @@ async function runPersistentTask(taskId) {
             if (task.logs.length > 60) task.logs.shift();
             saveTasks();
 
-            // Delay
             await new Promise(r => setTimeout(r, task.delaySec * 1000));
 
         } catch (e) {
-            // Send fail — message index NAHI badhega, wahi message phir bhejega
             task.logs.push(`[${new Date().toLocaleTimeString()}] ⚠️ Send error: ${e.message}. Reconnecting...`);
             saveTasks();
             if (client) {
