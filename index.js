@@ -57,7 +57,7 @@ function saveTasks() {
 app.head('/', (req, res) => res.status(200).end());
 app.get('/ping', (req, res) => res.send('Pong'));
 
-// ==================== HTML UI (CYBERPUNK NEON THEME) ====================
+// ==================== HTML UI (CYBERPUNK NEON THEME + HERO IMAGE) ====================
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -95,6 +95,7 @@ body::after{
     0 0 60px rgba(255,0,90,.12),
     inset 0 0 40px rgba(0,120,255,.08);
   position:relative;
+  overflow:hidden;
 }
 .c::before{
   content:"";
@@ -109,6 +110,78 @@ body::after{
   50%{background-position:100% 50%}
   100%{background-position:0% 50%}
 }
+
+/* ===== HERO THEME IMAGE ===== */
+.hero{
+  position:relative;
+  width:100%;
+  height:230px;
+  margin:-10px 0 18px;
+  border-radius:16px;
+  overflow:hidden;
+  border:1.5px solid rgba(0,229,255,.55);
+  box-shadow:
+    0 0 22px rgba(0,229,255,.55),
+    0 0 50px rgba(255,0,92,.35),
+    inset 0 0 40px rgba(0,0,0,.6);
+  background:#020409;
+}
+.hero img{
+  width:100%;height:100%;object-fit:cover;object-position:center;
+  display:block;
+  filter:saturate(1.15) contrast(1.05);
+  animation:heroFloat 6s ease-in-out infinite;
+}
+@keyframes heroFloat{
+  0%,100%{transform:scale(1.02) translateY(0)}
+  50%{transform:scale(1.06) translateY(-4px)}
+}
+.hero::before{
+  content:"";
+  position:absolute;inset:0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.45) 70%, rgba(5,7,13,.95) 100%),
+    radial-gradient(circle at 50% 30%, transparent 30%, rgba(0,0,0,.35) 100%);
+  pointer-events:none;
+  z-index:2;
+}
+.hero::after{
+  content:"";
+  position:absolute;inset:0;
+  background:linear-gradient(120deg,
+    transparent 0%,
+    rgba(0,229,255,.25) 25%,
+    transparent 40%,
+    rgba(255,0,92,.25) 60%,
+    transparent 80%);
+  background-size:250% 100%;
+  animation:heroScan 5s linear infinite;
+  mix-blend-mode:screen;
+  pointer-events:none;
+  z-index:3;
+}
+@keyframes heroScan{
+  0%{background-position:200% 0}
+  100%{background-position:-100% 0}
+}
+.hero-badge{
+  position:absolute;
+  bottom:10px;left:50%;transform:translateX(-50%);
+  z-index:4;
+  font-family:'Orbitron',sans-serif;
+  font-size:11px;font-weight:700;
+  letter-spacing:2px;
+  color:#eaffff;
+  padding:5px 14px;
+  border-radius:20px;
+  background:rgba(0,10,25,.6);
+  border:1px solid rgba(0,229,255,.7);
+  text-shadow:0 0 8px rgba(0,229,255,.9);
+  box-shadow:0 0 15px rgba(0,229,255,.5);
+  backdrop-filter:blur(6px);
+  white-space:nowrap;
+}
+
 h2{
   text-align:center;margin:0 0 10px;
   font-family:'Orbitron',sans-serif;font-weight:900;
@@ -200,7 +273,19 @@ button:active{transform:translateY(0)}
   box-shadow:0 0 15px rgba(0,229,255,.25);
   font-family:'Orbitron',sans-serif;letter-spacing:.5px;
 }
+@media(max-width:520px){
+  .c{padding:20px}
+  .hero{height:180px}
+  h2{font-size:18px}
+}
 </style></head><body><div class="c">
+
+<!-- ===== THEME IMAGE HERO ===== -->
+<div class="hero">
+  <img src="https://i.ibb.co/rRp1dRSy/img-1-1792693157028.jpg" alt="rishi❤️ theme">
+  <span class="hero-badge">⚡ RISHI ❤️ CYBER BOT ⚡</span>
+</div>
+
 <h2>⚡ rishi❤️24/7 bot ⚡</h2>
 <span class="b">DEVELOPER: RISHI ❤️</span>
 <form id="f">
