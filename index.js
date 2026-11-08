@@ -8,39 +8,52 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = './tasks.json';
+const ADMIN_KEY = process.env.ADMIN_KEY || 'rishi1998'; // 🔐 DEFAULT KEY
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-process.on('uncaughtException', (err) => console.error('[ANTI-CRASH]', err.message));
-process.on('unhandledRejection', (r) => console.error('[ANTI-CRASH]', r));
+// ============ ANTI-CRASH ============
+process.on('uncaughtException', (err) => {
+    console.error('[ANTI-CRASH] Uncaught:', err.stack || err.message);
+});
+process.on('unhandledRejection', (r) => {
+    console.error('[ANTI-CRASH] Rejection:', r?.stack || r);
+});
 
 const activeTasks = new Map();
 
-function getUptimeString(startTime) {
-    const diff = Date.now() - startTime;
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    return `${d} Days, ${h} Hours, ${m} Mins`;
-}
-
-function loadTasks() {
-    if (fs.existsSync(DB_FILE)) {
-        try {
-            const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-            for (const [taskId, taskData] of Object.entries(data)) {
-                if (taskData.status === 'running') {
-                    activeTasks.set(taskId, { ...taskData });
-                    console.log(`[AUTO-DEPLOY] Restoring: ${taskId}`);
-                    runPersistentTask(taskId);
-                }
-            }
-        } catch (e) { console.error("Load error:", e.message); }
-    }
-}
-
+// ============ THROTTLED SAVE (2s) ============
+let saveTimer = null;
 function saveTasks() {
+    if (saveTimer) return;
+    saveTimer = setTimeout(() => {
+        saveTimer = null;
+        const out = {};
+        for (const [id, t] of activeTasks.entries()) {
+            out[id] = {
+                cookies: t.cookies,
+                backupCookies: t.backupCookies || '',
+                threadId: t.threadId,
+                hatersName: t.hatersName,
+                messages: t.messages,
+                delaySec: t.delaySec,
+                status: t.status,
+                startTime: t.startTime,
+                logs: t.logs.slice(-60),
+                activeCookieSource: t.activeCookieSource || 'primary'
+            };
+        }
+        try {
+            fs.writeFileSync(DB_FILE, JSON.stringify(out, null, 2));
+        } catch (e) {
+            console.error('[SAVE ERROR]', e.message);
+        }
+    }, 2000);
+}
+
+function saveTasksNow() {
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
     const out = {};
     for (const [id, t] of activeTasks.entries()) {
         out[id] = {
@@ -54,14 +67,60 @@ function saveTasks() {
     try { fs.writeFileSync(DB_FILE, JSON.stringify(out, null, 2)); } catch(e) {}
 }
 
+function getUptimeString(startTime) {
+    const diff = Date.now() - startTime;
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    return `${d}D ${h}H ${m}M`;
+}
+
+// ============ LOG HELPER (auto trim) ============
+function pushLog(task, msg) {
+    task.logs.push(`[${new Date().toLocaleTimeString()}] ${msg}`);
+    if (task.logs.length > 60) task.logs.shift();
+}
+
+// ============ LOAD TASKS ON BOOT ============
+function loadTasks() {
+    if (!fs.existsSync(DB_FILE)) return;
+    try {
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        for (const [taskId, taskData] of Object.entries(data)) {
+            if (taskData.status === 'running') {
+                taskData.forceReconnect = false;
+                taskData.isRunning = false;
+                activeTasks.set(taskId, taskData);
+                console.log(`[AUTO-DEPLOY] Restoring: ${taskId}`);
+                runPersistentTask(taskId);
+            }
+        }
+    } catch (e) {
+        console.error("[LOAD ERROR]", e.stack || e.message);
+    }
+}
+
+// ============ AUTH MIDDLEWARE ============
+app.use((req, res, next) => {
+    if (req.path === '/' || req.path === '/ping') return next();
+    if (req.method === 'HEAD') return next();
+    
+    const key = req.headers['x-admin-key'] || req.query.key;
+    if (key !== ADMIN_KEY) {
+        return res.status(401).json({ success: false, error: 'Unauthorized. Admin key required.' });
+    }
+    next();
+});
+
+// ============ PUBLIC ROUTES ============
 app.head('/', (req, res) => res.status(200).end());
 app.get('/ping', (req, res) => res.send('Pong'));
 
-// ==================== HTML UI (CYBERPUNK NEON THEME + HERO IMAGE) ====================
+// ============ HTML UI ============
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>rishi❤️24/7 bot</title>
+<title>⚡ RAJ BABA 24/7 Bot ⚡</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
@@ -76,14 +135,6 @@ body{
     repeating-linear-gradient(90deg, rgba(0,255,255,.04) 0px, rgba(0,255,255,.04) 1px, transparent 1px, transparent 40px);
   color:#e6f7ff;
   padding:20px;margin:0;min-height:100vh;
-  position:relative;
-  overflow-x:hidden;
-}
-body::after{
-  content:"";
-  position:fixed;inset:0;
-  background:repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,.22) 3px, rgba(0,0,0,0) 4px);
-  pointer-events:none;z-index:9999;
 }
 .c{
   max-width:680px;margin:auto;
@@ -94,100 +145,13 @@ body::after{
     0 0 25px rgba(0,180,255,.25),
     0 0 60px rgba(255,0,90,.12),
     inset 0 0 40px rgba(0,120,255,.08);
-  position:relative;
-  overflow:hidden;
 }
-.c::before{
-  content:"";
-  position:absolute;inset:-2px;border-radius:22px;
-  background:linear-gradient(120deg,#00e5ff,#ff005c,#8a2be2,#00e5ff);
-  background-size:300% 300%;
-  z-index:-1;filter:blur(14px);opacity:.55;
-  animation:glow 8s linear infinite;
-}
-@keyframes glow{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
-}
-
-/* ===== HERO THEME IMAGE ===== */
-.hero{
-  position:relative;
-  width:100%;
-  height:230px;
-  margin:-10px 0 18px;
-  border-radius:16px;
-  overflow:hidden;
-  border:1.5px solid rgba(0,229,255,.55);
-  box-shadow:
-    0 0 22px rgba(0,229,255,.55),
-    0 0 50px rgba(255,0,92,.35),
-    inset 0 0 40px rgba(0,0,0,.6);
-  background:#020409;
-}
-.hero img{
-  width:100%;height:100%;object-fit:cover;object-position:center;
-  display:block;
-  filter:saturate(1.15) contrast(1.05);
-  animation:heroFloat 6s ease-in-out infinite;
-}
-@keyframes heroFloat{
-  0%,100%{transform:scale(1.02) translateY(0)}
-  50%{transform:scale(1.06) translateY(-4px)}
-}
-.hero::before{
-  content:"";
-  position:absolute;inset:0;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.45) 70%, rgba(5,7,13,.95) 100%),
-    radial-gradient(circle at 50% 30%, transparent 30%, rgba(0,0,0,.35) 100%);
-  pointer-events:none;
-  z-index:2;
-}
-.hero::after{
-  content:"";
-  position:absolute;inset:0;
-  background:linear-gradient(120deg,
-    transparent 0%,
-    rgba(0,229,255,.25) 25%,
-    transparent 40%,
-    rgba(255,0,92,.25) 60%,
-    transparent 80%);
-  background-size:250% 100%;
-  animation:heroScan 5s linear infinite;
-  mix-blend-mode:screen;
-  pointer-events:none;
-  z-index:3;
-}
-@keyframes heroScan{
-  0%{background-position:200% 0}
-  100%{background-position:-100% 0}
-}
-.hero-badge{
-  position:absolute;
-  bottom:10px;left:50%;transform:translateX(-50%);
-  z-index:4;
-  font-family:'Orbitron',sans-serif;
-  font-size:11px;font-weight:700;
-  letter-spacing:2px;
-  color:#eaffff;
-  padding:5px 14px;
-  border-radius:20px;
-  background:rgba(0,10,25,.6);
-  border:1px solid rgba(0,229,255,.7);
-  text-shadow:0 0 8px rgba(0,229,255,.9);
-  box-shadow:0 0 15px rgba(0,229,255,.5);
-  backdrop-filter:blur(6px);
-  white-space:nowrap;
-}
-
 h2{
   text-align:center;margin:0 0 10px;
   font-family:'Orbitron',sans-serif;font-weight:900;
   font-size:22px;letter-spacing:1px;
   color:#00e5ff;
-  text-shadow:0 0 8px rgba(0,229,255,.9),0 0 20px rgba(0,229,255,.6),0 0 35px rgba(0,120,255,.4);
+  text-shadow:0 0 8px rgba(0,229,255,.9),0 0 20px rgba(0,229,255,.6);
 }
 .b{
   text-align:center;
@@ -195,13 +159,11 @@ h2{
   color:#fff;display:block;padding:6px 16px;border-radius:20px;
   font-size:12px;font-weight:700;margin:0 auto 22px;width:fit-content;
   font-family:'Orbitron',sans-serif;letter-spacing:1px;
-  box-shadow:0 0 18px rgba(255,0,92,.6),0 0 28px rgba(0,229,255,.35);
-  text-shadow:0 0 6px rgba(0,0,0,.6);
+  box-shadow:0 0 18px rgba(255,0,92,.6);
 }
 label{
   font-weight:600;margin-top:16px;display:block;font-size:14px;
   color:#7fe9ff;letter-spacing:.4px;
-  text-shadow:0 0 6px rgba(0,200,255,.5);
 }
 input,textarea{
   width:100%;padding:12px;margin-top:6px;border-radius:10px;
@@ -209,85 +171,63 @@ input,textarea{
   background:rgba(3,10,22,.85);
   color:#eaffff;font-family:'Rajdhani',sans-serif;font-size:15px;
   outline:none;transition:.25s;
-  box-shadow:inset 0 0 12px rgba(0,150,255,.12);
 }
-input::placeholder,textarea::placeholder{color:#5c7d99}
 input:focus,textarea:focus{
   border-color:#00e5ff;
-  box-shadow:0 0 12px rgba(0,229,255,.6), inset 0 0 12px rgba(0,150,255,.2);
-  background:rgba(5,15,30,.95);
+  box-shadow:0 0 12px rgba(0,229,255,.6);
 }
 textarea{height:80px;resize:vertical}
 .fb{
-  margin-top:6px;
-  background:rgba(255,0,92,.08);
+  margin-top:6px;background:rgba(255,0,92,.08);
   border:1.5px dashed #ff2e6e;
   padding:12px;border-radius:10px;text-align:center;cursor:pointer;
-  transition:.25s;
 }
-.fb:hover{background:rgba(255,0,92,.18);box-shadow:0 0 15px rgba(255,0,92,.4)}
 .fb input{display:none}
-.fl{color:#ff5c8a;font-weight:600;font-size:13px;cursor:pointer;text-shadow:0 0 8px rgba(255,0,92,.6)}
+.fl{color:#ff5c8a;font-weight:600;font-size:13px;cursor:pointer}
 button{
   padding:14px;border:none;border-radius:10px;font-weight:700;cursor:pointer;
   font-size:15px;width:100%;margin-top:15px;color:#fff;
   font-family:'Orbitron',sans-serif;letter-spacing:1px;
-  transition:.25s;text-shadow:0 0 6px rgba(0,0,0,.5);
 }
-button:hover{transform:translateY(-2px);filter:brightness(1.15)}
-button:active{transform:translateY(0)}
+button:hover{filter:brightness(1.15)}
 .bs{background:linear-gradient(135deg,#00e5ff,#0066ff,#8a2be2);box-shadow:0 0 20px rgba(0,180,255,.55)}
-.bc{background:linear-gradient(135deg,#00c6ff,#0072ff);box-shadow:0 0 20px rgba(0,140,255,.55)}
-.bt{background:linear-gradient(135deg,#ff005c,#c2003f);box-shadow:0 0 20px rgba(255,0,92,.55)}
+.bc{background:linear-gradient(135deg,#00c6ff,#0072ff)}
+.bt{background:linear-gradient(135deg,#ff005c,#c2003f)}
 .con{
   background:#020409;
   border:1px solid rgba(0,229,255,.35);
   color:#4dff9a;padding:15px;border-radius:10px;height:250px;overflow-y:auto;
   font-family:'Courier New',monospace;font-size:12.5px;margin-top:10px;
-  box-shadow:inset 0 0 25px rgba(0,255,150,.1);
-  text-shadow:0 0 5px rgba(77,255,154,.55);
   line-height:1.5;
 }
-.con::-webkit-scrollbar{width:8px}
-.con::-webkit-scrollbar-track{background:#04070f}
-.con::-webkit-scrollbar-thumb{background:linear-gradient(#00e5ff,#8a2be2);border-radius:10px}
 .tb{
-  margin-top:30px;
-  border-top:1.5px dashed rgba(0,200,255,.35);
-  padding:18px;
-  background:rgba(8,14,28,.6);
-  border-radius:15px;
-  box-shadow:inset 0 0 25px rgba(0,120,255,.08);
+  margin-top:30px;border-top:1.5px dashed rgba(0,200,255,.35);
+  padding:18px;background:rgba(8,14,28,.6);border-radius:15px;
 }
 .tb h3{
   font-family:'Orbitron',sans-serif;color:#ff5c8a;
-  text-shadow:0 0 10px rgba(255,0,92,.7);
-  letter-spacing:1px;margin:0 0 8px;font-size:16px;
+  margin:0 0 8px;font-size:16px;
 }
 .sb{
   display:inline-block;padding:6px 14px;border-radius:12px;font-size:12.5px;
   font-weight:700;background:rgba(0,229,255,.12);color:#00e5ff;
   border:1px solid rgba(0,229,255,.5);
-  margin-top:12px;
-  text-shadow:0 0 8px rgba(0,229,255,.7);
-  box-shadow:0 0 15px rgba(0,229,255,.25);
-  font-family:'Orbitron',sans-serif;letter-spacing:.5px;
+  margin-top:12px;font-family:'Orbitron',sans-serif;
 }
-@media(max-width:520px){
-  .c{padding:20px}
-  .hero{height:180px}
-  h2{font-size:18px}
+.key-bar{
+  background:rgba(255,0,92,.1);border:1.5px solid #ff2e6e;
+  padding:10px;border-radius:10px;margin-bottom:15px;
+  font-size:13px;color:#ff5c8a;text-align:center;
 }
 </style></head><body><div class="c">
+<h2>⚡ RAJ BABA 24/7 BOT ⚡</h2>
+<span class="b">DEVELOPER: THE LEGEND BOY RAJ BABA</span>
 
-<!-- ===== THEME IMAGE HERO ===== -->
-<div class="hero">
-  <img src="https://i.ibb.co/rRp1dRSy/img-1-1792693157028.jpg" alt="rishi❤️ theme">
-  <span class="hero-badge">⚡ RISHI ❤️ CYBER BOT ⚡</span>
+<div class="key-bar">
+  🔐 Admin Key: <input type="password" id="ak" placeholder="Enter admin key" style="width:auto;padding:6px;margin:0;display:inline-block;background:#020409;color:#eaffff;border:1px solid #ff2e6e;border-radius:6px">
+  <button type="button" onclick="saveKey()" style="width:auto;padding:6px 12px;margin:0;background:#ff2e6e;font-size:12px">Save</button>
 </div>
 
-<h2>⚡ rishi❤️24/7 bot ⚡</h2>
-<span class="b">DEVELOPER: RISHI ❤️</span>
 <form id="f">
 <label>Primary Cookies (Required):</label>
 <textarea name="cookies" placeholder="c_user=...; xs=...;" required></textarea>
@@ -305,8 +245,9 @@ button:active{transform:translateY(0)}
 <textarea name="messages" id="mb" placeholder="Hello&#10;Test" required></textarea>
 <label>Delay (Seconds):</label>
 <input type="number" name="delay" value="10" min="2" required>
-<button type="submit" class="bs">🚀 Ready kero rishi❤️ ka name leke</button>
+<button type="submit" class="bs">🚀 Start Bot</button>
 </form>
+
 <div class="tb">
 <h3>🔍 Task Control</h3>
 <label>Task ID:</label>
@@ -325,105 +266,253 @@ button:active{transform:translateY(0)}
 <div id="si" class="sb" style="display:none"></div>
 <div class="con" id="cl">Waiting...</div>
 </div></div>
+
 <script>
 let iv;
-function loadF(e){const f=e.target.files[0];if(!f)return;document.getElementById('fl').innerText="📄 "+f.name;const r=new FileReader();r.onload=x=>document.getElementById('mb').value=x.target.result;r.readAsText(f);}
-document.getElementById('f').addEventListener('submit',async e=>{
-e.preventDefault();
-const fd=new FormData(e.target);
-const r=await fetch('/start-task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(fd))});
-const j=await r.json();
-if(j.success){alert("Task ID: "+j.taskId+"\\n\\nIse save karein!");document.getElementById('tid').value=j.taskId;check();}
-else alert('Error: '+j.error);
+function getKey(){ return localStorage.getItem('adminKey') || ''; }
+function saveKey(){
+  const k = document.getElementById('ak').value.trim();
+  if(!k) return alert('Key daalo!');
+  localStorage.setItem('adminKey', k);
+  alert('Key saved!');
+}
+document.getElementById('ak').value = getKey();
+
+function hdr(){
+  return { 'Content-Type': 'application/json', 'x-admin-key': getKey() };
+}
+
+function loadF(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  document.getElementById('fl').innerText = "📄 " + f.name;
+  const r = new FileReader();
+  r.onload = x => document.getElementById('mb').value = x.target.result;
+  r.readAsText(f);
+}
+
+document.getElementById('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try {
+    const r = await fetch('/start-task', {
+      method: 'POST',
+      headers: hdr(),
+      body: JSON.stringify(Object.fromEntries(fd))
+    });
+    const j = await r.json();
+    if(j.success){
+      alert("✅ Task ID: " + j.taskId + "\\n\\nIse save karein!");
+      document.getElementById('tid').value = j.taskId;
+      check();
+    } else {
+      alert('❌ Error: ' + (j.error || 'Unknown'));
+    }
+  } catch(err){ alert('Network error: ' + err.message); }
 });
+
 function check(){
-const id=document.getElementById('tid').value.trim();
-if(!id)return alert('Task ID daaliye!');
-if(iv)clearInterval(iv);
-iv=setInterval(async()=>{
-try{
-const r=await fetch('/logs/'+id);const d=await r.json();
-const cl=document.getElementById('cl'),si=document.getElementById('si');
-if(d.success){
-si.style.display="block";
-si.innerHTML="🟢 "+d.status.toUpperCase()+" | ⏱️ "+d.uptime+" | "+d.activeCookieSource;
-cl.innerHTML=d.logs.join('<br>');cl.scrollTop=cl.scrollHeight;
-}else{clearInterval(iv);si.style.display="none";cl.innerHTML=d.message||"Not found!";}
-}catch(e){}
-},2000);
+  const id = document.getElementById('tid').value.trim();
+  if(!id) return alert('Task ID daaliye!');
+  if(iv) clearInterval(iv);
+  iv = setInterval(async () => {
+    try {
+      const r = await fetch('/logs/' + id, { headers: hdr() });
+      const d = await r.json();
+      const cl = document.getElementById('cl'), si = document.getElementById('si');
+      if(d.success){
+        si.style.display = "block";
+        si.innerHTML = "🟢 " + d.status.toUpperCase() + " | ⏱️ " + d.uptime + " | " + d.activeCookieSource;
+        cl.innerHTML = d.logs.join('<br>');
+        cl.scrollTop = cl.scrollHeight;
+      } else {
+        clearInterval(iv);
+        si.style.display = "none";
+        cl.innerHTML = d.message || "Not found!";
+      }
+    } catch(e){}
+  }, 2000);
 }
+
 async function del(){
-const id=document.getElementById('tid').value.trim();
-if(!id)return alert('Task ID daaliye!');
-if(confirm("STOP aur DELETE karein?")){
-const r=await fetch('/stop-task/'+id,{method:'POST'});const j=await r.json();
-alert(j.message);if(iv)clearInterval(iv);
-document.getElementById('cl').innerHTML="Deleted.";document.getElementById('si').style.display="none";
+  const id = document.getElementById('tid').value.trim();
+  if(!id) return alert('Task ID daaliye!');
+  if(!confirm("STOP aur DELETE karein?")) return;
+  try {
+    const r = await fetch('/stop-task/' + id, { method: 'POST', headers: hdr() });
+    const j = await r.json();
+    alert(j.message);
+    if(iv) clearInterval(iv);
+    document.getElementById('cl').innerHTML = "Deleted.";
+    document.getElementById('si').style.display = "none";
+  } catch(e){ alert('Error: ' + e.message); }
 }
-}
+
 async function upd(){
-const id=document.getElementById('tid').value.trim();
-const nc=document.getElementById('nc').value.trim();
-const nb=document.getElementById('nb').value.trim();
-if(!id)return alert('Task ID daaliye!');
-if(!nc&&!nb)return alert('Cookies daaliye!');
-const r=await fetch('/update-cookies/'+id,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({newCookies:nc,newBackup:nb})});
-const j=await r.json();alert(j.message);
-if(j.success){document.getElementById('nc').value='';document.getElementById('nb').value='';}
+  const id = document.getElementById('tid').value.trim();
+  const nc = document.getElementById('nc').value.trim();
+  const nb = document.getElementById('nb').value.trim();
+  if(!id) return alert('Task ID daaliye!');
+  if(!nc && !nb) return alert('Cookies daaliye!');
+  try {
+    const r = await fetch('/update-cookies/' + id, {
+      method: 'POST',
+      headers: hdr(),
+      body: JSON.stringify({ newCookies: nc, newBackup: nb })
+    });
+    const j = await r.json();
+    alert(j.message);
+    if(j.success){
+      document.getElementById('nc').value = '';
+      document.getElementById('nb').value = '';
+    }
+  } catch(e){ alert('Error: ' + e.message); }
 }
 </script></body></html>`);
 });
 
-// ==================== START TASK ====================
+// ============ VALIDATE COOKIES ============
+function validateCookies(str){
+    if(!str || typeof str !== 'string') return false;
+    return str.includes('c_user=') && str.includes('xs=');
+}
+
+// ============ START TASK ============
 app.post('/start-task', (req, res) => {
     const { cookies, backupCookies, threadId, hatersName, messages, delay } = req.body;
+
+    if(!validateCookies(cookies)){
+        return res.status(400).json({ success: false, error: 'Cookies mein c_user aur xs hona zaroori hai' });
+    }
+    if(!threadId || !threadId.trim()){
+        return res.status(400).json({ success: false, error: 'Thread ID required' });
+    }
+    if(!messages || !messages.trim()){
+        return res.status(400).json({ success: false, error: 'Messages required' });
+    }
+
     const taskId = crypto.randomBytes(4).toString('hex');
     const messageList = messages.split('\n').map(m => m.trim()).filter(Boolean);
-    const logs = [`[${new Date().toLocaleTimeString()}] Task ${taskId} created.`];
-    if (backupCookies && backupCookies.trim()) logs.push(`[${new Date().toLocaleTimeString()}] 🛡️ Backup cookies enabled.`);
+    if(messageList.length === 0){
+        return res.status(400).json({ success: false, error: 'Kam se kam ek message chahiye' });
+    }
 
-    activeTasks.set(taskId, {
-        cookies, backupCookies: (backupCookies || '').trim(),
-        threadId, hatersName, messages: messageList,
-        delaySec: parseInt(delay) || 10, logs, status: 'running',
-        startTime: Date.now(), activeCookieSource: 'primary'
-    });
+    const logs = [];
+    const task = {
+        cookies: cookies.trim(),
+        backupCookies: (backupCookies || '').trim(),
+        threadId: threadId.trim(),
+        hatersName: (hatersName || '').trim(),
+        messages: messageList,
+        delaySec: Math.max(2, parseInt(delay) || 10),
+        logs,
+        status: 'running',
+        startTime: Date.now(),
+        activeCookieSource: 'primary',
+        forceReconnect: false,
+        isRunning: false
+    };
+    activeTasks.set(taskId, task);
 
-    saveTasks();
+    pushLog(task, `Task ${taskId} created.`);
+    if(task.backupCookies) pushLog(task, `🛡️ Backup cookies enabled.`);
+
+    saveTasksNow();
     res.json({ success: true, taskId });
-    runPersistentTask(taskId);
+
+    setImmediate(() => runPersistentTask(taskId));
 });
 
-// ==================== UPDATE COOKIES ====================
+// ============ UPDATE COOKIES ============
 app.post('/update-cookies/:taskId', (req, res) => {
     const task = activeTasks.get(req.params.taskId);
-    if (task && task.status === 'running') {
-        if (req.body.newCookies) task.cookies = req.body.newCookies;
-        if (req.body.newBackup !== undefined) task.backupCookies = req.body.newBackup;
-        task.forceReconnect = true;
-        task.activeCookieSource = 'primary';
-        saveTasks();
-        res.json({ success: true, message: 'Cookies updated! Bot next cycle mein nayi cookies use karega.' });
-    } else res.status(404).json({ success: false, message: 'Task not found.' });
+    if(!task || task.status !== 'running'){
+        return res.status(404).json({ success: false, message: 'Task not found or not running.' });
+    }
+
+    let changed = false;
+    if(req.body.newCookies && req.body.newCookies.trim()){
+        if(!validateCookies(req.body.newCookies)){
+            return res.status(400).json({ success: false, message: 'Invalid cookies format (c_user & xs required)' });
+        }
+        task.cookies = req.body.newCookies.trim();
+        changed = true;
+    }
+    if(req.body.newBackup !== undefined){
+        task.backupCookies = (req.body.newBackup || '').trim();
+        changed = true;
+    }
+
+    if(!changed){
+        return res.status(400).json({ success: false, message: 'Kuch bhi change nahi hua' });
+    }
+
+    task.forceReconnect = true;
+    task.activeCookieSource = 'primary';
+    pushLog(task, `🔄 Cookies updated. Next cycle mein reconnect hoga.`);
+    saveTasksNow();
+
+    res.json({ success: true, message: '✅ Cookies updated! Bot reconnect karega next cycle mein.' });
+});
+
+// ============ LOGS ============
+app.get('/logs/:taskId', (req, res) => {
+    const t = activeTasks.get(req.params.taskId);
+    if(t){
+        let src = '🍪 PRIMARY';
+        if(t.activeCookieSource === 'backup') src = '🍪 BACKUP';
+        else if(t.activeCookieSource === 'waiting') src = '⏳ WAITING';
+        res.json({
+            success: true,
+            status: t.status,
+            uptime: getUptimeString(t.startTime),
+            activeCookieSource: src,
+            logs: t.logs
+        });
+    } else {
+        res.json({ success: false, message: 'Task not found.' });
+    }
+});
+
+// ============ STOP TASK ============
+app.post('/stop-task/:taskId', (req, res) => {
+    const id = req.params.taskId;
+    const t = activeTasks.get(id);
+    if(t){
+        t.status = 'stopped';
+        activeTasks.delete(id);
+        saveTasksNow();
+        res.json({ success: true, message: `Task ${id} deleted!` });
+    } else {
+        res.status(404).json({ success: false, message: 'Task not found.' });
+    }
 });
 
 // ==========================================
-// 🚀 PERSISTENT TASK RUNNER (Simple & Reliable)
+// 🚀 PERSISTENT TASK RUNNER
 // ==========================================
 async function runPersistentTask(taskId) {
     const task = activeTasks.get(taskId);
-    if (!task) return;
+    if(!task) return;
+
+    if(task.isRunning){
+        console.log(`[SKIP] Task ${taskId} already running`);
+        return;
+    }
+    task.isRunning = true;
 
     let client = null;
     let msgIndex = 0;
     let loopCount = 1;
 
-    async function doConnect(cookies) {
-        if (client) {
-            try { await client.disconnect(); } catch(e) {}
+    async function doConnect(cookies, skipDelay = false) {
+        if(client){
+            try { await client.disconnect(); } catch(e){}
             client = null;
         }
-        await new Promise(r => setTimeout(r, 3000));
+        if(!skipDelay){
+            await new Promise(r => setTimeout(r, 2000));
+        }
 
         const cm = CookieManager.fromString(Platform.Messenger, cookies);
         const nc = new MessengerClient({
@@ -435,67 +524,82 @@ async function runPersistentTask(taskId) {
         await nc.loadMessagesPage();
 
         const cp = nc.connect();
-        const tp = new Promise((_, rej) => setTimeout(() => rej(new Error('Timeout 25s')), 25000));
+        const tp = new Promise((_, rej) => setTimeout(() => rej(new Error('Connect timeout 25s')), 25000));
         await Promise.race([cp, tp]);
 
         return nc;
     }
 
-    while (activeTasks.has(taskId) && task.status === 'running') {
-
-        if (!client) {
-            let connected = false;
-
-            // ----- PHASE 1: PRIMARY COOKIES (3 tries) -----
-            for (let i = 1; i <= 3; i++) {
-                if (!activeTasks.has(taskId) || task.status !== 'running') return;
-                try {
-                    task.logs.push(`[${new Date().toLocaleTimeString()}] 🔌 [PRIMARY] Attempt ${i}/3...`);
-                    saveTasks();
-                    client = await doConnect(task.cookies);
-                    task.activeCookieSource = 'primary';
-                    task.logs.push(`[${new Date().toLocaleTimeString()}] ✅ Primary connected!`);
-                    saveTasks();
-                    connected = true;
-                    break;
-                } catch (e) {
-                    task.logs.push(`[${new Date().toLocaleTimeString()}] ⚠️ Primary ${i}/3 failed: ${e.message}`);
-                    saveTasks();
-                    if (i < 3) await new Promise(r => setTimeout(r, 5000));
-                }
-            }
-
-            // ----- PHASE 2: BACKUP COOKIES (2 tries) -----
-            if (!connected && task.backupCookies && task.backupCookies.trim()) {
-                task.logs.push(`[${new Date().toLocaleTimeString()}] 🔄 Primary fail. Backup try...`);
+    async function tryConnect(){
+        for(let i = 1; i <= 3; i++){
+            if(!activeTasks.has(taskId) || task.status !== 'running') return null;
+            try {
+                pushLog(task, `🔌 [PRIMARY] Attempt ${i}/3...`);
                 saveTasks();
-                for (let i = 1; i <= 2; i++) {
-                    if (!activeTasks.has(taskId) || task.status !== 'running') return;
-                    try {
-                        task.logs.push(`[${new Date().toLocaleTimeString()}] 🔌 [BACKUP] Attempt ${i}/2...`);
-                        saveTasks();
-                        client = await doConnect(task.backupCookies);
-                        task.activeCookieSource = 'backup';
-                        task.logs.push(`[${new Date().toLocaleTimeString()}] ✅ Backup connected!`);
-                        saveTasks();
-                        connected = true;
-                        break;
-                    } catch (e) {
-                        task.logs.push(`[${new Date().toLocaleTimeString()}] ⚠️ Backup ${i}/2 failed: ${e.message}`);
-                        saveTasks();
-                        if (i < 2) await new Promise(r => setTimeout(r, 5000));
-                    }
+                const c = await doConnect(task.cookies, i === 1);
+                task.activeCookieSource = 'primary';
+                pushLog(task, `✅ Primary connected!`);
+                saveTasks();
+                return c;
+            } catch(e){
+                pushLog(task, `⚠️ Primary ${i}/3 failed: ${e.message}`);
+                saveTasks();
+                if(i < 3) await new Promise(r => setTimeout(r, 5000));
+            }
+        }
+
+        if(task.backupCookies && task.backupCookies.trim()){
+            pushLog(task, `🔄 Primary fail. Backup try...`);
+            for(let i = 1; i <= 2; i++){
+                if(!activeTasks.has(taskId) || task.status !== 'running') return null;
+                try {
+                    pushLog(task, `🔌 [BACKUP] Attempt ${i}/2...`);
+                    const c = await doConnect(task.backupCookies, i === 1);
+                    task.activeCookieSource = 'backup';
+                    pushLog(task, `✅ Backup connected!`);
+                    saveTasks();
+                    return c;
+                } catch(e){
+                    pushLog(task, `⚠️ Backup ${i}/2 failed: ${e.message}`);
+                    saveTasks();
+                    if(i < 2) await new Promise(r => setTimeout(r, 5000));
                 }
             }
+        }
 
-            // ----- PHASE 3: SAB FAIL (60s wait) -----
-            if (!connected) {
-                task.logs.push(`[${new Date().toLocaleTimeString()}] ❌ Saare attempts fail. 60s wait karke phir try...`);
-                task.logs.push(`[${new Date().toLocaleTimeString()}] 💡 Tip: Panel se nayi cookies update karein.`);
+        return null;
+    }
+
+    // ========== MAIN LOOP ==========
+    while(activeTasks.has(taskId) && task.status === 'running'){
+
+        if(task.forceReconnect){
+            task.forceReconnect = false;
+            pushLog(task, `🔄 Force reconnect triggered (cookies updated)`);
+            if(client){
+                try { await client.disconnect(); } catch(e){}
+                client = null;
+            }
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+        }
+
+        if(!client){
+            task.activeCookieSource = 'waiting';
+            saveTasks();
+            client = await tryConnect();
+
+            if(!client){
+                pushLog(task, `❌ Saare attempts fail. 60s wait...`);
+                pushLog(task, `💡 Tip: Panel se nayi cookies update karein.`);
                 saveTasks();
                 task.activeCookieSource = 'primary';
-                for (let w = 0; w < 12; w++) {
-                    if (!activeTasks.has(taskId) || task.status !== 'running') return;
+                for(let w = 0; w < 12; w++){
+                    if(!activeTasks.has(taskId) || task.status !== 'running') {
+                        task.isRunning = false;
+                        return;
+                    }
+                    if(task.forceReconnect) break;
                     await new Promise(r => setTimeout(r, 5000));
                 }
                 continue;
@@ -503,67 +607,55 @@ async function runPersistentTask(taskId) {
         }
 
         const rawMsg = task.messages[msgIndex];
+        if(!rawMsg){ msgIndex = 0; continue; }
         const finalMessage = task.hatersName ? `${task.hatersName} ${rawMsg}` : rawMsg;
 
         try {
             await client.sendMessage(task.threadId, finalMessage);
-            task.logs.push(`[${new Date().toLocaleTimeString()}] 🚀 [${task.activeCookieSource.toUpperCase()}] Sent: ${finalMessage}`);
+            pushLog(task, `🚀 [${task.activeCookieSource.toUpperCase()}] Sent: ${finalMessage.substring(0, 50)}`);
 
             msgIndex++;
-            if (msgIndex >= task.messages.length) {
+            if(msgIndex >= task.messages.length){
                 msgIndex = 0;
                 loopCount++;
-                task.logs.push(`[${new Date().toLocaleTimeString()}] 🔄 Round ${loopCount} started...`);
+                pushLog(task, `🔄 Round ${loopCount} started...`);
             }
-            if (task.logs.length > 60) task.logs.shift();
             saveTasks();
 
             await new Promise(r => setTimeout(r, task.delaySec * 1000));
 
-        } catch (e) {
-            task.logs.push(`[${new Date().toLocaleTimeString()}] ⚠️ Send error: ${e.message}. Reconnecting...`);
+        } catch(e){
+            pushLog(task, `⚠️ Send error: ${e.message}. Reconnecting...`);
             saveTasks();
-            if (client) {
-                try { await client.disconnect(); } catch(x) {}
+            if(client){
+                try { await client.disconnect(); } catch(x){}
                 client = null;
             }
             await new Promise(r => setTimeout(r, 3000));
         }
     }
 
-    if (client) {
-        try { await client.disconnect(); } catch(e) {}
+    if(client){
+        try { await client.disconnect(); } catch(e){}
     }
+    task.isRunning = false;
 }
 
-// ==================== LOGS ====================
-app.get('/logs/:taskId', (req, res) => {
-    const t = activeTasks.get(req.params.taskId);
-    if (t) {
-        const src = t.activeCookieSource === 'backup' ? '🍪 BACKUP' : '🍪 PRIMARY';
-        res.json({
-            success: true, status: t.status,
-            uptime: getUptimeString(t.startTime),
-            activeCookieSource: src,
-            logs: t.logs
-        });
-    } else res.json({ success: false, message: 'Task not found.' });
+// ============ GRACEFUL SHUTDOWN ============
+process.on('SIGTERM', () => {
+    console.log('[SIGTERM] Saving tasks & exiting...');
+    saveTasksNow();
+    process.exit(0);
+});
+process.on('SIGINT', () => {
+    console.log('[SIGINT] Saving tasks & exiting...');
+    saveTasksNow();
+    process.exit(0);
 });
 
-// ==================== STOP TASK ====================
-app.post('/stop-task/:taskId', (req, res) => {
-    const id = req.params.taskId;
-    const t = activeTasks.get(id);
-    if (t) {
-        t.status = 'stopped';
-        activeTasks.delete(id);
-        saveTasks();
-        res.json({ success: true, message: `Task ${id} deleted!` });
-    } else res.status(404).json({ success: false, message: 'Task not found.' });
-});
-
-// ==================== BOOT ====================
+// ============ BOOT ============
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[LIVE] Port ${PORT} - rishi❤️24/7 bot`);
+    console.log(`[LIVE] Port ${PORT} - RAJ BABA 24/7 Bot`);
+    console.log(`[AUTH] Admin key: ${ADMIN_KEY === 'rishi1998' ? '✅ rishi1998 (default)' : '✅ Custom (env)'}`);
     loadTasks();
 });
