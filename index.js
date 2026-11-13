@@ -213,15 +213,12 @@ app.get('/', (req, res) => {
 *{box-sizing:border-box}
 body{
   font-family:'Rajdhani',sans-serif;
-  background:#282a36;
-  background-image:
-    radial-gradient(circle at 15% 15%, rgba(189,147,249,.28), transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(255,121,198,.22), transparent 45%),
-    radial-gradient(circle at 50% 50%, rgba(139,233,253,.15), transparent 60%),
-    radial-gradient(circle at 80% 10%, rgba(80,250,123,.12), transparent 40%),
-    repeating-linear-gradient(0deg, rgba(189,147,249,.05) 0px, rgba(189,147,249,.05) 1px, transparent 1px, transparent 40px),
-    repeating-linear-gradient(90deg, rgba(255,121,198,.05) 0px, rgba(255,121,198,.05) 1px, transparent 1px, transparent 40px);
-  background-attachment:fixed;
+  background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://i.ibb.co/DH6kBWh9/images.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #282a36;
   color:#f8f8f2;
   padding:20px;margin:0;min-height:100vh;
 }
@@ -284,7 +281,7 @@ button:hover{filter:brightness(1.15)}
 .no-tasks-msg{padding:20px;text-align:center;color:#8be9fd;font-size:14px;background:rgba(189,147,249,.05);border-radius:10px;border:1px dashed rgba(189,147,249,.3);}
 </style></head><body><div class="c">
 <h2>⚡ rishi24/7 bots ⚡</h2>
-<span class="b">DEVELOPER: THE LEGEND BOY RAJ BABA</span>
+<span class="b">DEVELOPER: THE LEGEND BOY RISHI</span>
 <div style="text-align:center"><span class="server-badge" id="serverBadge">🌐 Loading server...</span></div>
 
 <div class="key-bar">
