@@ -14,8 +14,8 @@ const DB_FILE = './tasks.json';
 const ADMIN_KEY = 'Rishi&bots@2026#Panel';
 const COOKIE_SECRET = process.env.COOKIE_SECRET || 'CookieEncrypt_998877_Rishi_FallbackKey';
 
-// Server ka naam — env se ya hostname se
-const SERVER_NAME = process.env.SERVER_NAME || `Server-${os.hostname()}`;
+// Server ka naam — env se ya fixed name se
+const SERVER_NAME = process.env.SERVER_NAME || `rishi24/7 bots`;
 
 if (!ADMIN_KEY || ADMIN_KEY.length < 16) {
     console.error('FATAL: ADMIN_KEY too short (min 16 chars).');
@@ -207,87 +207,89 @@ app.get('/tasks', (req, res) => {
 app.get('/', (req, res) => {
     res.send(`<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡ RAJ BABA 24/7 Bot ⚡</title>
+<title>⚡ rishi24/7 bots ⚡</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
 body{
   font-family:'Rajdhani',sans-serif;
-  background:#05070d;
+  background:#282a36;
   background-image:
-    radial-gradient(circle at 20% 10%, rgba(0,180,255,.18), transparent 45%),
-    radial-gradient(circle at 85% 90%, rgba(255,0,90,.20), transparent 45%),
-    radial-gradient(circle at 50% 50%, rgba(120,0,255,.12), transparent 60%),
-    repeating-linear-gradient(0deg, rgba(0,255,255,.04) 0px, rgba(0,255,255,.04) 1px, transparent 1px, transparent 40px),
-    repeating-linear-gradient(90deg, rgba(0,255,255,.04) 0px, rgba(0,255,255,.04) 1px, transparent 1px, transparent 40px);
-  color:#e6f7ff;
+    radial-gradient(circle at 15% 15%, rgba(189,147,249,.28), transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(255,121,198,.22), transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(139,233,253,.15), transparent 60%),
+    radial-gradient(circle at 80% 10%, rgba(80,250,123,.12), transparent 40%),
+    repeating-linear-gradient(0deg, rgba(189,147,249,.05) 0px, rgba(189,147,249,.05) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(255,121,198,.05) 0px, rgba(255,121,198,.05) 1px, transparent 1px, transparent 40px);
+  background-attachment:fixed;
+  color:#f8f8f2;
   padding:20px;margin:0;min-height:100vh;
 }
-.c{max-width:820px;margin:auto;background:linear-gradient(160deg, rgba(10,18,35,.92), rgba(5,8,18,.96));padding:30px;border-radius:20px;border:1.5px solid rgba(0,200,255,.45);box-shadow:0 0 25px rgba(0,180,255,.25),0 0 60px rgba(255,0,90,.12),inset 0 0 40px rgba(0,120,255,.08);}
-h2{text-align:center;margin:0 0 10px;font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;letter-spacing:1px;color:#00e5ff;text-shadow:0 0 8px rgba(0,229,255,.9),0 0 20px rgba(0,229,255,.6);}
-.b{text-align:center;background:linear-gradient(135deg,#ff005c,#8a2be2,#00e5ff);color:#fff;display:block;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;margin:0 auto 22px;width:fit-content;font-family:'Orbitron',sans-serif;letter-spacing:1px;box-shadow:0 0 18px rgba(255,0,92,.6);}
-label{font-weight:600;margin-top:16px;display:block;font-size:14px;color:#7fe9ff;letter-spacing:.4px;}
-input,textarea{width:100%;padding:12px;margin-top:6px;border-radius:10px;border:1.5px solid rgba(0,200,255,.35);background:rgba(3,10,22,.85);color:#eaffff;font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;transition:.25s;}
-input:focus,textarea:focus{border-color:#00e5ff;box-shadow:0 0 12px rgba(0,229,255,.6);}
+.c{max-width:820px;margin:auto;background:linear-gradient(160deg, rgba(40,42,54,.94), rgba(30,32,42,.97));padding:30px;border-radius:20px;border:1.5px solid rgba(189,147,249,.5);box-shadow:0 0 25px rgba(189,147,249,.3),0 0 60px rgba(255,121,198,.15),inset 0 0 40px rgba(139,233,253,.08);}
+h2{text-align:center;margin:0 0 10px;font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;letter-spacing:1px;color:#bd93f9;text-shadow:0 0 8px rgba(189,147,249,.9),0 0 20px rgba(189,147,249,.6);}
+.b{text-align:center;background:linear-gradient(135deg,#ff79c6,#bd93f9,#8be9fd);color:#fff;display:block;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;margin:0 auto 22px;width:fit-content;font-family:'Orbitron',sans-serif;letter-spacing:1px;box-shadow:0 0 18px rgba(255,121,198,.6);}
+label{font-weight:600;margin-top:16px;display:block;font-size:14px;color:#8be9fd;letter-spacing:.4px;}
+input,textarea{width:100%;padding:12px;margin-top:6px;border-radius:10px;border:1.5px solid rgba(189,147,249,.35);background:rgba(30,32,42,.85);color:#f8f8f2;font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;transition:.25s;}
+input:focus,textarea:focus{border-color:#bd93f9;box-shadow:0 0 12px rgba(189,147,249,.6);}
 textarea{height:80px;resize:vertical}
-.fb{margin-top:6px;background:rgba(255,0,92,.08);border:1.5px dashed #ff2e6e;padding:12px;border-radius:10px;text-align:center;cursor:pointer;}
+.fb{margin-top:6px;background:rgba(255,121,198,.08);border:1.5px dashed #ff79c6;padding:12px;border-radius:10px;text-align:center;cursor:pointer;}
 .fb input{display:none}
-.fl{color:#ff5c8a;font-weight:600;font-size:13px;cursor:pointer}
+.fl{color:#ff79c6;font-weight:600;font-size:13px;cursor:pointer}
 button{padding:14px;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:15px;width:100%;margin-top:15px;color:#fff;font-family:'Orbitron',sans-serif;letter-spacing:1px;}
 button:hover{filter:brightness(1.15)}
-.bs{background:linear-gradient(135deg,#00e5ff,#0066ff,#8a2be2);box-shadow:0 0 20px rgba(0,180,255,.55)}
-.bc{background:linear-gradient(135deg,#00c6ff,#0072ff)}
-.bt{background:linear-gradient(135deg,#ff005c,#c2003f)}
-.con{background:#020409;border:1px solid rgba(0,229,255,.35);color:#4dff9a;padding:15px;border-radius:10px;height:220px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12.5px;margin-top:10px;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
-.tb{margin-top:30px;border-top:1.5px dashed rgba(0,200,255,.35);padding:18px;background:rgba(8,14,28,.6);border-radius:15px;}
-.tb h3{font-family:'Orbitron',sans-serif;color:#ff5c8a;margin:0 0 8px;font-size:16px;}
-.sb{display:inline-block;padding:6px 14px;border-radius:12px;font-size:12.5px;font-weight:700;background:rgba(0,229,255,.12);color:#00e5ff;border:1px solid rgba(0,229,255,.5);margin-top:12px;font-family:'Orbitron',sans-serif;}
-.key-bar{background:rgba(255,0,92,.1);border:1.5px solid #ff2e6e;padding:10px;border-radius:10px;margin-bottom:15px;font-size:13px;color:#ff5c8a;text-align:center;}
-.server-badge{display:inline-block;padding:4px 12px;background:rgba(0,229,255,.15);border:1px solid #00e5ff;border-radius:8px;font-size:12px;color:#00e5ff;margin-bottom:15px;font-family:'Orbitron',sans-serif;}
+.bs{background:linear-gradient(135deg,#8be9fd,#6272a4,#bd93f9);box-shadow:0 0 20px rgba(189,147,249,.55)}
+.bc{background:linear-gradient(135deg,#8be9fd,#6272a4)}
+.bt{background:linear-gradient(135deg,#ff79c6,#c2003f)}
+.con{background:#1e202a;border:1px solid rgba(139,233,253,.35);color:#50fa7b;padding:15px;border-radius:10px;height:220px;overflow-y:auto;font-family:'Courier New',monospace;font-size:12.5px;margin-top:10px;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+.tb{margin-top:30px;border-top:1.5px dashed rgba(189,147,249,.35);padding:18px;background:rgba(40,42,54,.6);border-radius:15px;}
+.tb h3{font-family:'Orbitron',sans-serif;color:#ff79c6;margin:0 0 8px;font-size:16px;}
+.sb{display:inline-block;padding:6px 14px;border-radius:12px;font-size:12.5px;font-weight:700;background:rgba(189,147,249,.12);color:#bd93f9;border:1px solid rgba(189,147,249,.5);margin-top:12px;font-family:'Orbitron',sans-serif;}
+.key-bar{background:rgba(255,121,198,.1);border:1.5px solid #ff79c6;padding:10px;border-radius:10px;margin-bottom:15px;font-size:13px;color:#ff79c6;text-align:center;}
+.server-badge{display:inline-block;padding:4px 12px;background:rgba(189,147,249,.15);border:1px solid #bd93f9;border-radius:8px;font-size:12px;color:#bd93f9;margin-bottom:15px;font-family:'Orbitron',sans-serif;}
 
 /* ============ TABS ============ */
-.tabs-header{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;border-bottom:1.5px solid rgba(0,200,255,.2);padding-bottom:12px;}
+.tabs-header{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;border-bottom:1.5px solid rgba(189,147,249,.2);padding-bottom:12px;}
 .tab-btn{
   display:flex;align-items:center;gap:8px;
-  padding:8px 14px;background:rgba(0,60,120,.4);
-  border:1px solid rgba(0,200,255,.3);border-radius:10px 10px 0 0;
-  color:#7fe9ff;cursor:pointer;font-family:'Rajdhani',sans-serif;
+  padding:8px 14px;background:rgba(98,114,164,.4);
+  border:1px solid rgba(189,147,249,.3);border-radius:10px 10px 0 0;
+  color:#8be9fd;cursor:pointer;font-family:'Rajdhani',sans-serif;
   font-weight:600;font-size:13px;transition:.2s;max-width:280px;
 }
-.tab-btn:hover{background:rgba(0,120,200,.5);color:#fff}
+.tab-btn:hover{background:rgba(189,147,249,.35);color:#fff}
 .tab-btn.active{
-  background:linear-gradient(135deg,rgba(0,229,255,.3),rgba(0,100,255,.4));
-  border-color:#00e5ff;color:#fff;
-  box-shadow:0 0 15px rgba(0,229,255,.5);
+  background:linear-gradient(135deg,rgba(139,233,253,.3),rgba(189,147,249,.4));
+  border-color:#bd93f9;color:#fff;
+  box-shadow:0 0 15px rgba(189,147,249,.5);
 }
 .tab-btn .tab-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px;}
 .tab-btn .close-x{
   display:inline-flex;align-items:center;justify-content:center;
   width:18px;height:18px;border-radius:50%;
-  background:rgba(255,0,92,.4);color:#fff;font-size:12px;
+  background:rgba(255,121,198,.4);color:#fff;font-size:12px;
   line-height:1;font-weight:900;
 }
-.tab-btn .close-x:hover{background:#ff005c;transform:scale(1.15)}
-.tab-btn .status-dot{width:8px;height:8px;border-radius:50%;background:#4dff9a;box-shadow:0 0 6px #4dff9a;}
-.tab-btn .status-dot.waiting{background:#ffb800;box-shadow:0 0 6px #ffb800;}
-.tab-btn .status-dot.backup{background:#ff9500;box-shadow:0 0 6px #ff9500;}
+.tab-btn .close-x:hover{background:#ff79c6;transform:scale(1.15)}
+.tab-btn .status-dot{width:8px;height:8px;border-radius:50%;background:#50fa7b;box-shadow:0 0 6px #50fa7b;}
+.tab-btn .status-dot.waiting{background:#f1fa8c;box-shadow:0 0 6px #f1fa8c;}
+.tab-btn .status-dot.backup{background:#ffb86c;box-shadow:0 0 6px #ffb86c;}
 
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
-.tab-meta{font-size:12.5px;color:#7fe9ff;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
-.tab-meta .pill{background:rgba(0,229,255,.1);padding:3px 10px;border-radius:8px;border:1px solid rgba(0,229,255,.3);}
-.tab-meta .pill.server{color:#ff5c8a;border-color:rgba(255,0,92,.5);background:rgba(255,0,92,.1);}
+.tab-meta{font-size:12.5px;color:#8be9fd;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.tab-meta .pill{background:rgba(189,147,249,.1);padding:3px 10px;border-radius:8px;border:1px solid rgba(189,147,249,.3);}
+.tab-meta .pill.server{color:#ff79c6;border-color:rgba(255,121,198,.5);background:rgba(255,121,198,.1);}
 
-.empty-state{text-align:center;padding:30px;color:#557;font-size:14px;}
-.no-tasks-msg{padding:20px;text-align:center;color:#7fe9ff;font-size:14px;background:rgba(0,229,255,.05);border-radius:10px;border:1px dashed rgba(0,229,255,.3);}
+.empty-state{text-align:center;padding:30px;color:#6272a4;font-size:14px;}
+.no-tasks-msg{padding:20px;text-align:center;color:#8be9fd;font-size:14px;background:rgba(189,147,249,.05);border-radius:10px;border:1px dashed rgba(189,147,249,.3);}
 </style></head><body><div class="c">
-<h2>⚡ RAJ BABA 24/7 BOT ⚡</h2>
+<h2>⚡ rishi24/7 bots ⚡</h2>
 <span class="b">DEVELOPER: THE LEGEND BOY RAJ BABA</span>
 <div style="text-align:center"><span class="server-badge" id="serverBadge">🌐 Loading server...</span></div>
 
 <div class="key-bar">
-  🔐 Admin Key: <input type="password" id="ak" placeholder="Enter admin key" style="width:auto;padding:6px;margin:0;display:inline-block;background:#020409;color:#eaffff;border:1px solid #ff2e6e;border-radius:6px">
-  <button type="button" onclick="saveKey()" style="width:auto;padding:6px 12px;margin:0;background:#ff2e6e;font-size:12px">Save</button>
+  🔐 Admin Key: <input type="password" id="ak" placeholder="Enter admin key" style="width:auto;padding:6px;margin:0;display:inline-block;background:#1e202a;color:#f8f8f2;border:1px solid #ff79c6;border-radius:6px">
+  <button type="button" onclick="saveKey()" style="width:auto;padding:6px 12px;margin:0;background:#ff79c6;font-size:12px">Save</button>
 </div>
 
 <form id="f">
@@ -488,7 +490,7 @@ async function loadLogs(){
       si.style.display = 'inline-block';
       const task = allTasks.find(t => t.taskId === activeTabId);
       const serverName = task ? task.serverName : 'Unknown';
-      si.innerHTML = '<span style="color:#ff5c8a">🌐 ' + escapeHtml(serverName) + '</span> | 🟢 ' + d.status.toUpperCase() + ' | ⏱️ ' + d.uptime + ' | ' + d.activeCookieSource;
+      si.innerHTML = '<span style="color:#ff79c6">🌐 ' + escapeHtml(serverName) + '</span> | 🟢 ' + d.status.toUpperCase() + ' | ⏱️ ' + d.uptime + ' | ' + d.activeCookieSource;
       renderLogs(cl, d.logs);
     } else {
       clearInterval(iv);
@@ -826,7 +828,7 @@ process.on('SIGINT', () => {
 
 // ============ BOOT ============
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[LIVE] Port ${PORT} - RAJ BABA 24/7 Bot`);
+    console.log(`[LIVE] Port ${PORT} - rishi24/7 bots`);
     console.log(`[SERVER] Name: ${SERVER_NAME}`);
     console.log(`[AUTH] Admin key loaded ✅`);
     console.log(`[SECURITY] Cookies encrypted with AES-256-GCM ✅`);
